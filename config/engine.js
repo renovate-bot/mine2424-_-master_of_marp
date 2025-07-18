@@ -5,10 +5,10 @@ const markdownItMark = require('markdown-it-mark');
 const markdownItPrism = require('markdown-it-prism');
 
 module.exports = (opts) => {
-  const marp = new Marp(opts);
-
-  // Enable HTML tags
-  marp.markdown.enable('html');
+  const marp = new Marp({
+    ...opts,
+    html: true
+  });
 
   // Add markdown-it plugins
   marp.markdown
