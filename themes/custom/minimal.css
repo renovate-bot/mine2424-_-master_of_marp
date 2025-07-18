@@ -1,0 +1,77 @@
+/* @theme minimal */
+
+@import '../base/base';
+
+:root {
+  --color-primary: #000000;
+  --color-secondary: #333333;
+  --color-accent: #666666;
+  --color-text: #000000;
+  --color-text-muted: #666666;
+  --color-background: #ffffff;
+  --color-background-alt: #f5f5f5;
+  --slide-padding: 100px;
+}
+
+section {
+  border: 20px solid white;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+}
+
+h1, h2, h3 {
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: var(--spacing-md);
+}
+
+/* Minimalist code blocks */
+pre {
+  background-color: #fafafa;
+  border: 1px solid #e5e5e5;
+  font-size: 22px;
+}
+
+code {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Simple emphasis */
+strong {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Clean lists */
+ul, ol {
+  list-style: none;
+  padding-left: 0;
+}
+
+li::before {
+  content: '—';
+  margin-right: var(--spacing-sm);
+  color: var(--color-text-muted);
+}
+
+/* Minimal title slide */
+section.title {
+  background: white;
+  color: var(--color-text);
+}
+
+section.title h1 {
+  color: var(--color-primary);
+  border: none;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+}
+
+section.title h2 {
+  color: var(--color-text-muted);
+  font-weight: 300;
+}

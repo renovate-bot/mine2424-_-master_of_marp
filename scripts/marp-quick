@@ -1,0 +1,269 @@
+#!/bin/bash
+
+# Quick Marp presentation creator
+# Creates a presentation from clipboard or input with smart formatting
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Function to print colored output
+print_color() {
+    local color=$1
+    shift
+    echo -e "${color}$@${NC}"
+}
+
+# Function to apply 6x6 rule to text
+apply_six_rule() {
+    local text="$1"
+    local processed=""
+    local bullet_count=0
+    
+    # Process each line
+    while IFS= read -r line; do
+        # Check if it's a bullet point
+        if [[ "$line" =~ ^[[:space:]]*[-*+][[:space:]] ]]; then
+            bullet_count=$((bullet_count + 1))
+            
+            # Skip if more than 6 bullets
+            if [ $bullet_count -gt 6 ]; then
+                continue
+            fi
+            
+            # Limit to 6 words
+            words=($(echo "$line" | sed 's/^[[:space:]]*[-*+][[:space:]]//'))
+            if [ ${#words[@]} -gt 6 ]; then
+                line=$(echo "$line" | sed 's/^[[:space:]]*[-*+][[:space:]]//')
+                line="- ${words[0]} ${words[1]} ${words[2]} ${words[3]} ${words[4]} ${words[5]}"
+            fi
+        else
+            bullet_count=0
+        fi
+        
+        processed+="$line\n"
+    done <<< "$text"
+    
+    echo -e "$processed"
+}
+
+# Function to convert text to Marp format
+convert_to_marp() {
+    local input="$1"
+    local title="$2"
+    local theme="${3:-base}"
+    
+    # Start with frontmatter
+    local output="---
+marp: true
+theme: $theme
+paginate: true
+footer: $title
+---
+
+<!-- _class: title -->
+
+# $title
+
+$(whoami)
+
+$(date +%Y-%m-%d)
+
+---
+
+"
+    
+    # Process input text
+    local slide_content=""
+    local current_heading=""
+    local bullet_count=0
+    
+    while IFS= read -r line; do
+        # Check for headings
+        if [[ "$line" =~ ^#{1,6}[[:space:]] ]]; then
+            # Save previous slide if exists
+            if [ -n "$slide_content" ]; then
+                output+="$slide_content\n---\n\n"
+            fi
+            current_heading="$line"
+            slide_content="$line\n\n"
+            bullet_count=0
+        # Check for bullet points
+        elif [[ "$line" =~ ^[[:space:]]*[-*+][[:space:]] ]] || [[ "$line" =~ ^[[:space:]]*[0-9]+\.[[:space:]] ]]; then
+            bullet_count=$((bullet_count + 1))
+            
+            # Start new slide if exceeding 6 bullets
+            if [ $bullet_count -gt 6 ]; then
+                output+="$slide_content\n---\n\n"
+                slide_content="$current_heading\n\n"
+                bullet_count=1
+            fi
+            
+            # Apply 6-word limit
+            words=($(echo "$line" | sed 's/^[[:space:]]*[-*+0-9.][[:space:]]//'))
+            if [ ${#words[@]} -gt 6 ]; then
+                line="- ${words[0]} ${words[1]} ${words[2]} ${words[3]} ${words[4]} ${words[5]}"
+            else
+                line=$(echo "$line" | sed 's/^[[:space:]]*[0-9]+\./- /')
+            fi
+            
+            slide_content+="$line\n"
+        # Regular text
+        elif [ -n "$line" ]; then
+            # Convert long paragraphs to bullets
+            if [ ${#line} -gt 100 ]; then
+                # Split into sentences and convert to bullets
+                sentences=$(echo "$line" | sed 's/\. /.\n/g')
+                while IFS= read -r sentence; do
+                    if [ -n "$sentence" ]; then
+                        bullet_count=$((bullet_count + 1))
+                        if [ $bullet_count -gt 6 ]; then
+                            output+="$slide_content\n---\n\n"
+                            slide_content="$current_heading\n\n"
+                            bullet_count=1
+                        fi
+                        
+                        # Truncate to ~6 words
+                        words=($sentence)
+                        if [ ${#words[@]} -gt 6 ]; then
+                            sentence="- ${words[0]} ${words[1]} ${words[2]} ${words[3]} ${words[4]} ${words[5]}..."
+                        else
+                            sentence="- $sentence"
+                        fi
+                        slide_content+="$sentence\n"
+                    fi
+                done <<< "$sentences"
+            else
+                slide_content+="$line\n"
+            fi
+        fi
+    done <<< "$input"
+    
+    # Add final slide
+    if [ -n "$slide_content" ]; then
+        output+="$slide_content\n---\n\n"
+    fi
+    
+    # Add conclusion slide
+    output+="<!-- _class: section -->
+
+# Thank You!
+
+Questions?"
+    
+    echo "$output"
+}
+
+# Main script
+print_color "$BLUE" "🚀 Marp Quick Presentation Creator"
+echo
+
+# Get title
+print_color "$YELLOW" "Enter presentation title: "
+read -r title
+
+if [ -z "$title" ]; then
+    title="Quick Presentation"
+fi
+
+# Get content source
+print_color "$YELLOW" "Content source:"
+echo "  1) Clipboard"
+echo "  2) Type/paste content"
+echo "  3) File"
+read -r source_choice
+
+content=""
+
+case $source_choice in
+    1)
+        # Get from clipboard
+        if command -v pbpaste &> /dev/null; then
+            content=$(pbpaste)
+        elif command -v xclip &> /dev/null; then
+            content=$(xclip -selection clipboard -o)
+        else
+            print_color "$RED" "Error: Clipboard access not available"
+            exit 1
+        fi
+        ;;
+    2)
+        # Get from input
+        print_color "$YELLOW" "Paste content (press Ctrl+D when done):"
+        content=$(cat)
+        ;;
+    3)
+        # Get from file
+        print_color "$YELLOW" "Enter file path: "
+        read -r filepath
+        if [ -f "$filepath" ]; then
+            content=$(cat "$filepath")
+        else
+            print_color "$RED" "Error: File not found"
+            exit 1
+        fi
+        ;;
+    *)
+        print_color "$RED" "Invalid choice"
+        exit 1
+        ;;
+esac
+
+# Select theme
+print_color "$YELLOW" "Select theme (1=base, 2=minimal, 3=vibrant): "
+read -r theme_choice
+
+case $theme_choice in
+    2) theme="minimal" ;;
+    3) theme="vibrant" ;;
+    *) theme="base" ;;
+esac
+
+# Generate filename
+filename=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g')
+date_prefix=$(date "+%Y%m%d")
+filepath="src/presentations/${date_prefix}_${filename}.md"
+
+# Convert content
+print_color "$BLUE" "🔄 Converting to Marp format..."
+marp_content=$(convert_to_marp "$content" "$title" "$theme")
+
+# Apply 6x6 rule
+marp_content=$(apply_six_rule "$marp_content")
+
+# Save file
+echo "$marp_content" > "$filepath"
+print_color "$GREEN" "✅ Created: $filepath"
+
+# Validate
+print_color "$BLUE" "🔍 Validating..."
+npm run validate "$filepath" 2>/dev/null || print_color "$YELLOW" "⚠️  Some warnings detected"
+
+# Ask to build
+print_color "$YELLOW" "Build presentation now? (y/n): "
+read -r build_now
+
+if [[ "$build_now" =~ ^[Yy]$ ]]; then
+    npm run build "$filepath"
+    print_color "$GREEN" "✅ Built successfully!"
+    
+    # Ask to open
+    print_color "$YELLOW" "Open in browser? (y/n): "
+    read -r open_now
+    
+    if [[ "$open_now" =~ ^[Yy]$ ]]; then
+        ./scripts/marp open "$filepath"
+    fi
+fi
+
+print_color "$BLUE" "📝 Edit with: ${EDITOR:-nano} $filepath"

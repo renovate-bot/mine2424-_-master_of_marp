@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+*.html
+*.pdf
+*.pptx
+
+# Development
+.DS_Store
+*.log
+*.tmp
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache
+.cache/
+.parcel-cache/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.temp
+*.tmp
+~$*
+
+# User presentations (keep templates)
+src/presentations/*
+!src/presentations/.gitkeep
+
+# Custom themes (keep base themes)
+themes/custom/*
+!themes/custom/minimal.css
+!themes/custom/vibrant.css

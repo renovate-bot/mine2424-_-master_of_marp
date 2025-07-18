@@ -1,0 +1,30 @@
+# Marp configuration
+engine: ./config/engine.js
+allowLocalFiles: true
+html: true
+pdf: true
+pdfOutlines: true
+pdfOutlines.pages: false
+pdfOutlines.headings: true
+
+# Theme configuration
+theme: base
+themeSet:
+  - ./themes/base
+  - ./themes/custom
+
+# Markdown extensions
+markdown:
+  breaks: true
+  html: true
+  linkify: true
+  typographer: true
+  
+# Export options
+options:
+  looseYAML: false
+  markdown:
+    breaks: true
+    html: true
+    linkify: true
+    typographer: true

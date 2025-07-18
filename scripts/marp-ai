@@ -1,0 +1,332 @@
+#!/bin/bash
+
+# AI-powered Marp presentation generator
+# Works with Claude Code or other AI tools
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Function to print colored output
+print_color() {
+    local color=$1
+    shift
+    echo -e "${color}$@${NC}"
+}
+
+# Function to generate AI prompt
+generate_prompt() {
+    local topic="$1"
+    local type="$2"
+    local slides="$3"
+    
+    cat << EOF
+Create a Marp presentation about "$topic" with the following requirements:
+
+1. Presentation type: $type
+2. Number of slides: approximately $slides
+3. Follow the 6×6 rule strictly:
+   - Maximum 6 bullet points per slide
+   - Maximum 6 words per bullet point
+4. Use proper Marp frontmatter with theme: base
+5. Include these slide types:
+   - Title slide with author and date
+   - Agenda/Overview slide
+   - Content slides with one main idea each
+   - Section dividers where appropriate
+   - Conclusion/Summary slide
+   - Thank you slide
+6. Use Marp containers where helpful:
+   - ::: note for important points
+   - ::: columns for comparisons
+   - ::: alert for warnings/tips
+7. Follow typography rules:
+   - Headings: 40pt minimum (h1, h2)
+   - Content: 28pt minimum
+8. Make it engaging and professional
+
+Format: Return only the Marp markdown content, no explanations.
+EOF
+}
+
+# Function to save AI response
+save_ai_response() {
+    local content="$1"
+    local filename="$2"
+    
+    echo "$content" > "$filename"
+    print_color "$GREEN" "✅ Saved to: $filename"
+}
+
+# Main script
+print_color "$CYAN" "🤖 AI-Powered Marp Presentation Generator"
+echo
+
+# Get topic
+print_color "$YELLOW" "Enter presentation topic: "
+read -r topic
+
+if [ -z "$topic" ]; then
+    print_color "$RED" "Error: Topic is required"
+    exit 1
+fi
+
+# Get presentation type
+print_color "$YELLOW" "Select presentation type:"
+echo "  1) Business/Executive"
+echo "  2) Technical/Developer"
+echo "  3) Educational/Training"
+echo "  4) Sales/Marketing"
+echo "  5) General/Informational"
+read -r type_choice
+
+case $type_choice in
+    1) type="business executive presentation focusing on ROI, strategy, and outcomes" ;;
+    2) type="technical presentation with code examples, architecture diagrams, and implementation details" ;;
+    3) type="educational presentation with clear explanations, examples, and learning objectives" ;;
+    4) type="sales presentation highlighting benefits, value propositions, and customer success" ;;
+    *) type="general informational presentation with clear structure and engaging content" ;;
+esac
+
+# Get number of slides
+print_color "$YELLOW" "Approximate number of slides (10-30): "
+read -r num_slides
+
+if [ -z "$num_slides" ]; then
+    num_slides=15
+fi
+
+# Generate filename
+filename=$(echo "$topic" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g')
+date_prefix=$(date "+%Y%m%d")
+filepath="src/presentations/${date_prefix}_${filename}.md"
+
+# Generate prompt
+prompt=$(generate_prompt "$topic" "$type" "$num_slides")
+
+print_color "$BLUE" "📝 Generated AI Prompt:"
+echo
+echo "$prompt"
+echo
+
+# Integration options
+print_color "$YELLOW" "How would you like to generate the presentation?"
+echo "  1) Copy prompt to clipboard (use with Claude Code)"
+echo "  2) Save prompt to file"
+echo "  3) Enter AI response manually"
+echo "  4) Use sample template"
+read -r integration_choice
+
+case $integration_choice in
+    1)
+        # Copy to clipboard
+        if command -v pbcopy &> /dev/null; then
+            echo "$prompt" | pbcopy
+            print_color "$GREEN" "✅ Prompt copied to clipboard!"
+        elif command -v xclip &> /dev/null; then
+            echo "$prompt" | xclip -selection clipboard
+            print_color "$GREEN" "✅ Prompt copied to clipboard!"
+        else
+            print_color "$YELLOW" "⚠️  Cannot access clipboard. Here's the prompt to copy:"
+            echo "$prompt"
+        fi
+        
+        print_color "$BLUE" "\n📋 Next steps:"
+        echo "1. Paste this prompt into Claude Code"
+        echo "2. Copy the generated Marp markdown"
+        echo "3. Run this script again and choose option 3"
+        ;;
+        
+    2)
+        # Save prompt to file
+        prompt_file="${filepath%.md}_prompt.txt"
+        echo "$prompt" > "$prompt_file"
+        print_color "$GREEN" "✅ Prompt saved to: $prompt_file"
+        ;;
+        
+    3)
+        # Enter AI response
+        print_color "$YELLOW" "Paste the AI-generated Marp content (press Ctrl+D when done):"
+        ai_content=$(cat)
+        
+        if [ -n "$ai_content" ]; then
+            save_ai_response "$ai_content" "$filepath"
+            
+            # Validate
+            print_color "$BLUE" "🔍 Validating presentation..."
+            npm run validate "$filepath" 2>/dev/null || print_color "$YELLOW" "⚠️  Some warnings detected"
+            
+            # Build
+            print_color "$YELLOW" "Build presentation? (y/n): "
+            read -r build_now
+            
+            if [[ "$build_now" =~ ^[Yy]$ ]]; then
+                npm run build "$filepath"
+                print_color "$GREEN" "✅ Built successfully!"
+            fi
+        fi
+        ;;
+        
+    4)
+        # Use sample template
+        print_color "$BLUE" "🎯 Generating sample presentation..."
+        
+        sample_content="---
+marp: true
+theme: base
+paginate: true
+footer: $topic
+---
+
+<!-- _class: title -->
+
+# $topic
+
+## AI-Generated Presentation
+
+$(whoami)
+
+$(date +%Y-%m-%d)
+
+---
+
+# Agenda
+
+- Introduction and Context
+- Key Concepts Overview
+- Main Topic Analysis
+- Implementation Strategy
+- Results and Benefits
+- Next Steps Forward
+
+---
+
+# Introduction
+
+- Define the problem
+- Establish the context
+- Identify key stakeholders
+- Set clear objectives
+- Outline expected outcomes
+
+---
+
+# Key Concepts
+
+::: note
+Understanding fundamental principles is crucial
+:::
+
+- Core principle one
+- Essential concept two
+- Critical factor three
+- Important element four
+- Key consideration five
+
+---
+
+# Analysis Overview
+
+::: columns
+::: column
+### Strengths
+- Major advantage one
+- Key strength two
+- Positive aspect three
+:::
+::: column
+### Opportunities
+- Growth potential one
+- Future possibility two
+- Expansion option three
+:::
+:::
+
+---
+
+# Implementation Plan
+
+| Phase | Duration | Deliverable |
+|-------|----------|-------------|
+| Research | 2 weeks | Analysis Report |
+| Design | 3 weeks | Architecture Plan |
+| Development | 6 weeks | Working Prototype |
+| Testing | 2 weeks | Quality Assurance |
+
+---
+
+# Expected Results
+
+- Improved efficiency metrics
+- Enhanced user satisfaction
+- Reduced operational costs
+- Increased market share
+- Better resource utilization
+
+---
+
+<!-- _class: section -->
+
+# Conclusion
+
+---
+
+# Key Takeaways
+
+1. **Strategic Value**: Clear business impact
+2. **Technical Feasibility**: Proven approach
+3. **Resource Efficiency**: Optimal utilization
+4. **Risk Management**: Controlled implementation
+
+---
+
+# Next Steps
+
+- [ ] Stakeholder approval
+- [ ] Resource allocation
+- [ ] Team formation
+- [ ] Project kickoff
+- [ ] Initial milestone
+
+---
+
+<!-- _class: title -->
+
+# Thank You!
+
+Questions?
+
+contact@example.com"
+        
+        save_ai_response "$sample_content" "$filepath"
+        
+        print_color "$YELLOW" "✏️  Edit the sample to match your topic: $topic"
+        ${EDITOR:-nano} "$filepath"
+        ;;
+        
+    *)
+        print_color "$RED" "Invalid choice"
+        exit 1
+        ;;
+esac
+
+# Show tips
+echo
+print_color "$CYAN" "💡 AI Presentation Tips:"
+echo "  • Keep prompts specific and detailed"
+echo "  • Review and edit AI-generated content"
+echo "  • Validate with: npm run validate"
+echo "  • Use ./scripts/marp dev for live preview"
+echo "  • Remember the 6×6 rule!"

@@ -1,0 +1,727 @@
+#!/bin/bash
+
+# Startup pitch-specific Marp tool
+# Creates and manages startup pitch presentations
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Function to print colored output
+print_color() {
+    local color=$1
+    shift
+    echo -e "${color}$@${NC}"
+}
+
+# Function to show help
+show_help() {
+    cat << EOF
+Startup Pitch Marp Tool
+
+Usage: marp-startup <command> [options]
+
+Commands:
+    new [type]          Create new startup pitch
+    validate [file]     Validate against startup pitch rules
+    convert [file]      Convert existing slides to startup format
+    analyze [file]      Analyze pitch completeness
+    generate [topic]    Generate pitch with AI assistance
+    help               Show this help
+
+Pitch Types:
+    simple      Simple business (5 min)
+    business    Business-heavy (7 min)
+    complex     Complex/Timeline business (7 min)
+    deeptech    Deep tech business (10 min)
+
+Examples:
+    marp-startup new simple
+    marp-startup validate my_pitch.md
+    marp-startup generate "AI-powered logistics"
+
+EOF
+}
+
+# Function to create new startup pitch
+create_startup_pitch() {
+    local type="${1:-simple}"
+    
+    print_color "$BLUE" "🚀 Creating Startup Pitch"
+    echo
+    
+    # Get company info
+    print_color "$YELLOW" "Company name: "
+    read -r company_name
+    
+    print_color "$YELLOW" "One-line description (20-30 chars): "
+    read -r tagline
+    
+    print_color "$YELLOW" "Industry/Market: "
+    read -r industry
+    
+    print_color "$YELLOW" "Funding stage (Pre-seed/Seed/Series A/etc): "
+    read -r stage
+    
+    # Generate filename
+    filename=$(echo "$company_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g')
+    date_prefix=$(date "+%Y%m%d")
+    filepath="src/presentations/${date_prefix}_${filename}_pitch.md"
+    
+    # Select appropriate template based on type
+    case $type in
+        simple)
+            template_sections="basic problem-solution competition traction team ask"
+            duration="5 minutes"
+            ;;
+        business)
+            template_sections="basic problem-solution competition gtm traction team ask"
+            duration="7 minutes"
+            ;;
+        complex)
+            template_sections="basic problem-solution timeline competition traction team ask"
+            duration="7 minutes"
+            ;;
+        deeptech)
+            template_sections="basic problem-solution technology timeline competition traction team ask"
+            duration="10 minutes"
+            ;;
+        *)
+            print_color "$RED" "Unknown pitch type: $type"
+            exit 1
+            ;;
+    esac
+    
+    # Create pitch content
+    cat > "$filepath" << EOF
+---
+marp: true
+theme: startup
+paginate: true
+footer: $company_name - Investor Pitch
+---
+
+<!-- _class: title -->
+
+# $company_name
+
+$tagline
+
+![width:200px](../assets/images/logo.png)
+
+---
+
+# Business Overview
+
+<!-- Keep to 15 seconds max -->
+
+We are building [what] for [who] to [achieve what outcome]
+
+Market: $industry
+Stage: $stage
+Type: ${type^} business ($duration pitch)
+
+---
+
+EOF
+
+    # Add sections based on type
+    if [[ "$template_sections" =~ "problem-solution" ]]; then
+        cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Problem & Solution
+
+---
+
+# Market Background
+
+<!-- 10-20 seconds - Why now? -->
+
+- [Industry trend with specific data]
+- [Regulatory or technology shift]
+- [Market inflection point]
+- [Urgency factor]
+
+---
+
+# Customer Problem
+
+**Target Customer**: [Specific segment, not "everyone"]
+
+- [Quantified pain point #1]
+- [Measurable impact on business]
+- [Current solution inadequacy]
+- [Cost of inaction]
+- [Urgency driver]
+
+---
+
+# Our Solution
+
+<!-- Show problem-solution fit -->
+
+We solve [problem] by [unique approach]
+
+Key innovations:
+- [Innovation 1]: [Impact]
+- [Innovation 2]: [Impact]
+- [Innovation 3]: [Impact]
+
+---
+
+# Product
+
+![width:800px](../assets/images/product-demo.png)
+
+[Show actual product screenshot or mockup]
+
+---
+
+EOF
+    fi
+    
+    if [[ "$template_sections" =~ "technology" ]]; then
+        cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Technology
+
+---
+
+# Technology Overview
+
+[Visual diagram of technology architecture]
+
+Key features:
+- Performance: [Metric vs competitors]
+- Scalability: [Capacity]
+- Innovation: [Patent/breakthrough]
+
+---
+
+# Technical Advantage
+
+| Metric | Our Tech | Best Competitor | Improvement |
+|--------|----------|-----------------|-------------|
+| Speed | X | Y | Zx faster |
+| Cost | $A | $B | C% cheaper |
+| Accuracy | D% | E% | F% better |
+
+**Defensibility**: [Patents/Trade secrets/Network effects]
+
+---
+
+# Development Roadmap
+
+| Phase | Timeline | Milestone | Business Impact |
+|-------|----------|-----------|-----------------|
+| Current | Now | [Status] | [Validation] |
+| Phase 1 | Q2 2025 | [Goal] | [Revenue unlock] |
+| Phase 2 | Q4 2025 | [Goal] | [Market expansion] |
+| Phase 3 | 2026 | [Goal] | [Moat building] |
+
+---
+
+EOF
+    fi
+    
+    if [[ "$template_sections" =~ "timeline" ]]; then
+        cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Growth Strategy
+
+---
+
+# Expansion Timeline
+
+**Phase 1 (2025-2026)**: Entry Market
+- Target: [Specific segment]
+- Market size: $[X]B
+- Strategy: [Land]
+
+**Phase 2 (2026-2028)**: Expansion
+- Target: [Adjacent market]
+- Market size: $[Y]B  
+- Strategy: [Expand]
+
+**Phase 3 (2028+)**: Platform
+- Target: [Ecosystem]
+- Market size: $[Z]B
+- Strategy: [Dominate]
+
+---
+
+EOF
+    fi
+    
+    if [[ "$template_sections" =~ "competition" ]]; then
+        cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Market & Competition
+
+---
+
+# Market Size
+
+<!-- Bottom-up calculation preferred -->
+
+- TAM: $[X]B (Global)
+- SAM: $[Y]B (Addressable)
+- SOM: $[Z]B (Realistic 5-year)
+
+CAGR: [X]%
+
+**Our target**: [X]% market share = $[Y]B revenue potential
+
+---
+
+# Competitive Landscape
+
+| Company | Strength | Weakness | Valuation |
+|---------|----------|----------|-----------|
+| [Leader] | [What] | [What] | $[X]B |
+| [Competitor] | [What] | [What] | $[X]M |
+| **Us** | **[Unique strength]** | **[Honest weakness]** | **-** |
+
+**How we win**: [Specific strategy]
+
+---
+
+EOF
+    fi
+    
+    if [[ "$template_sections" =~ "gtm" ]]; then
+        cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Go-to-Market
+
+---
+
+# GTM Strategy
+
+**Marketing**: [Channel] → [Channel] → [Channel]
+- CAC: $[X]
+- Proven channel: [Specific tactic working]
+
+**Sales**: [Model]
+- Sales cycle: [X] days
+- ACV: $[Y]
+- Pipeline: $[Z]M
+
+**Partnerships**:
+- [Strategic partner 1]
+- [Distribution partner]
+
+---
+
+EOF
+    fi
+    
+    # Always include traction and team
+    cat >> "$filepath" << 'EOF'
+<!-- _class: section -->
+
+# Traction & Team
+
+---
+
+<!-- _class: traction -->
+
+# Traction
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-value">[X]</div>
+    <div class="metric-label">Revenue/Users</div>
+  </div>
+  <div class="metric">
+    <div class="metric-value">[Y]%</div>
+    <div class="metric-label">Growth Rate</div>
+  </div>
+  <div class="metric">
+    <div class="metric-value">[Z]</div>
+    <div class="metric-label">Key Metric</div>
+  </div>
+</div>
+
+Key customers: [Logos or descriptions]
+
+---
+
+# Team
+
+<!-- Show founder-market fit -->
+
+**CEO**: [Name]
+- [Relevant experience]
+- [Previous success]
+
+**CTO**: [Name]  
+- [Technical credentials]
+- [Domain expertise]
+
+**[Key hire needed]**: Open position
+- Looking for [specific expertise]
+
+Total team: [X] people
+
+---
+
+<!-- _class: ask -->
+
+# Ask
+
+- **Raising**: $[X]M [Stage]
+- **Use of funds**:
+  - Product/R&D: [X]%
+  - Sales/Marketing: [Y]%
+  - Team: [Z]%
+- **Looking for**:
+  - [Type of investor]
+  - [Specific expertise]
+  - [Strategic value]
+
+---
+
+# Thank You
+
+**Contact**: [email]
+**Deck**: [url]
+
+Next steps:
+1. [Specific follow-up]
+2. [Due diligence item]
+3. [Meeting type]
+
+Questions?
+
+EOF
+    
+    print_color "$GREEN" "✅ Created: $filepath"
+    print_color "$CYAN" "📝 Tips:"
+    echo "  • Keep each slide to one main point"
+    echo "  • Use minimum 56pt font size"
+    echo "  • Include specific numbers, not generalizations"
+    echo "  • Practice to ensure timing ($duration)"
+    
+    # Offer to edit
+    print_color "$YELLOW" "Edit now? (y/n): "
+    read -r edit_now
+    if [[ "$edit_now" =~ ^[Yy]$ ]]; then
+        ${EDITOR:-nano} "$filepath"
+    fi
+}
+
+# Function to validate startup pitch
+validate_startup_pitch() {
+    local file="$1"
+    
+    if [ -z "$file" ]; then
+        print_color "$RED" "Please specify a file to validate"
+        exit 1
+    fi
+    
+    print_color "$BLUE" "🔍 Validating Startup Pitch: $file"
+    echo
+    
+    local errors=0
+    local warnings=0
+    
+    # Check file exists
+    if [ ! -f "$file" ]; then
+        print_color "$RED" "File not found: $file"
+        exit 1
+    fi
+    
+    # Read file content
+    content=$(cat "$file")
+    
+    # Check theme
+    if ! grep -q "theme: startup" "$file"; then
+        print_color "$YELLOW" "⚠️  Not using startup theme"
+        warnings=$((warnings + 1))
+    fi
+    
+    # Check sections based on pitch type
+    local required_sections=("Problem" "Solution" "Market" "Team" "Ask")
+    for section in "${required_sections[@]}"; do
+        if ! grep -qi "$section" "$file"; then
+            print_color "$RED" "❌ Missing required section: $section"
+            errors=$((errors + 1))
+        fi
+    done
+    
+    # Check for specific data
+    if ! grep -qE '\$[0-9]+[MBK]?|\d+%' "$file"; then
+        print_color "$YELLOW" "⚠️  No specific numbers found (revenue, percentages, etc.)"
+        warnings=$((warnings + 1))
+    fi
+    
+    # Check slide count
+    slide_count=$(grep -c "^---$" "$file")
+    print_color "$CYAN" "📊 Slide count: $slide_count"
+    
+    if [ $slide_count -lt 10 ]; then
+        print_color "$YELLOW" "⚠️  Very few slides - might be missing key sections"
+        warnings=$((warnings + 1))
+    elif [ $slide_count -gt 20 ]; then
+        print_color "$YELLOW" "⚠️  Many slides - consider consolidating for time"
+        warnings=$((warnings + 1))
+    fi
+    
+    # Check for images
+    if ! grep -q "!\[" "$file"; then
+        print_color "$YELLOW" "⚠️  No images found - consider adding product screenshots"
+        warnings=$((warnings + 1))
+    fi
+    
+    # Summary
+    echo
+    if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
+        print_color "$GREEN" "✅ Pitch looks good!"
+    else
+        print_color "$CYAN" "Summary: $errors errors, $warnings warnings"
+    fi
+    
+    # Run standard validation too
+    npm run validate "$file" 2>/dev/null || true
+}
+
+# Function to analyze pitch completeness
+analyze_pitch() {
+    local file="$1"
+    
+    if [ -z "$file" ]; then
+        print_color "$RED" "Please specify a file to analyze"
+        exit 1
+    fi
+    
+    print_color "$BLUE" "📊 Analyzing Startup Pitch Completeness"
+    echo
+    
+    # Define sections and their importance
+    declare -A sections=(
+        ["Problem"]=10
+        ["Solution"]=10
+        ["Market Size"]=8
+        ["Competition"]=7
+        ["Business Model"]=7
+        ["Traction"]=9
+        ["Team"]=9
+        ["Technology"]=6
+        ["Timeline"]=5
+        ["Go-to-Market"]=6
+        ["Ask"]=8
+        ["Financial"]=5
+    )
+    
+    local total_score=0
+    local max_score=0
+    
+    print_color "$CYAN" "Section Analysis:"
+    echo
+    
+    for section in "${!sections[@]}"; do
+        weight=${sections[$section]}
+        max_score=$((max_score + weight))
+        
+        if grep -qi "$section" "$file"; then
+            total_score=$((total_score + weight))
+            printf "✅ %-15s (weight: %2d)\n" "$section" "$weight"
+        else
+            printf "❌ %-15s (weight: %2d) - MISSING\n" "$section" "$weight"
+        fi
+    done
+    
+    # Calculate percentage
+    percentage=$((total_score * 100 / max_score))
+    
+    echo
+    print_color "$CYAN" "Completeness Score: $total_score/$max_score ($percentage%)"
+    echo
+    
+    # Recommendations based on score
+    if [ $percentage -lt 60 ]; then
+        print_color "$RED" "⚠️  Pitch needs significant work"
+        echo "Priority additions:"
+        [ -z "$(grep -i problem "$file")" ] && echo "  - Add clear problem definition"
+        [ -z "$(grep -i traction "$file")" ] && echo "  - Include traction/validation"
+        [ -z "$(grep -i team "$file")" ] && echo "  - Highlight team strengths"
+    elif [ $percentage -lt 80 ]; then
+        print_color "$YELLOW" "📈 Pitch is good but could be stronger"
+        echo "Consider adding:"
+        [ -z "$(grep -i timeline "$file")" ] && echo "  - Growth timeline/phases"
+        [ -z "$(grep -i go-to-market "$file")" ] && echo "  - GTM strategy"
+    else
+        print_color "$GREEN" "🌟 Excellent pitch completeness!"
+    fi
+}
+
+# Function to generate pitch with AI assistance
+generate_ai_pitch() {
+    local topic="${1:-}"
+    
+    print_color "$CYAN" "🤖 AI-Assisted Startup Pitch Generator"
+    echo
+    
+    if [ -z "$topic" ]; then
+        print_color "$YELLOW" "Enter your startup idea/topic: "
+        read -r topic
+    fi
+    
+    # Get additional context
+    print_color "$YELLOW" "Business type (simple/business/complex/deeptech): "
+    read -r business_type
+    
+    print_color "$YELLOW" "Target market: "
+    read -r market
+    
+    print_color "$YELLOW" "Key differentiation: "
+    read -r differentiation
+    
+    # Generate comprehensive prompt
+    prompt=$(cat << EOF
+Create a startup pitch deck for: "$topic"
+
+Context:
+- Business type: $business_type
+- Target market: $market
+- Key differentiation: $differentiation
+
+Requirements:
+1. Follow the startup pitch template structure
+2. Use "theme: startup" in frontmatter
+3. Include all sections for $business_type business:
+EOF
+)
+    
+    # Add sections based on business type
+    case $business_type in
+        simple)
+            prompt+="   - Basic Info, Problem-Solution, Competition, Traction, Team, Ask"
+            ;;
+        business)
+            prompt+="   - Basic Info, Problem-Solution, Competition, GTM, Traction, Team, Ask"
+            ;;
+        complex)
+            prompt+="   - Basic Info, Problem-Solution, Timeline, Competition, Traction, Team, Ask"
+            ;;
+        deeptech)
+            prompt+="   - Basic Info, Problem-Solution, Technology, Timeline, Competition, Team, Ask"
+            ;;
+    esac
+    
+    prompt+=$(cat << 'EOF'
+
+4. Follow these rules:
+   - Minimum 56pt font size (default in theme)
+   - One main idea per slide
+   - Use specific metrics and data
+   - Include visual placeholders
+   - Show clear problem-solution fit
+   - Demonstrate traction or validation
+   - Highlight team-market fit
+
+5. Format:
+   - Use Marp markdown
+   - Include speaker notes as HTML comments
+   - Add placeholder images with descriptive names
+   - Use the startup theme components (metrics, timeline, etc.)
+
+Generate a complete, investor-ready pitch deck.
+EOF
+)
+    
+    # Save prompt
+    prompt_file="startup_pitch_prompt_$(date +%s).txt"
+    echo "$prompt" > "$prompt_file"
+    
+    print_color "$GREEN" "✅ Prompt saved to: $prompt_file"
+    echo
+    print_color "$BLUE" "Options:"
+    echo "1. Copy prompt to clipboard"
+    echo "2. Open in Claude/ChatGPT"
+    echo "3. Generate sample pitch"
+    
+    read -r choice
+    
+    case $choice in
+        1)
+            if command -v pbcopy &> /dev/null; then
+                cat "$prompt_file" | pbcopy
+                print_color "$GREEN" "✅ Copied to clipboard!"
+            else
+                print_color "$YELLOW" "Copy this prompt:"
+                echo
+                cat "$prompt_file"
+            fi
+            ;;
+        3)
+            # Generate sample
+            filename="sample_$(echo "$topic" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g').md"
+            filepath="src/presentations/$filename"
+            
+            # Create a basic sample
+            create_startup_pitch "simple"
+            print_color "$GREEN" "✅ Sample created at: $filepath"
+            print_color "$YELLOW" "Edit and customize with your specific content"
+            ;;
+    esac
+}
+
+# Main command handling
+case "$1" in
+    new)
+        shift
+        create_startup_pitch "$@"
+        ;;
+    validate)
+        shift
+        validate_startup_pitch "$@"
+        ;;
+    analyze)
+        shift
+        analyze_pitch "$@"
+        ;;
+    generate)
+        shift
+        generate_ai_pitch "$@"
+        ;;
+    convert)
+        shift
+        file="$1"
+        if [ -z "$file" ]; then
+            print_color "$RED" "Please specify a file to convert"
+            exit 1
+        fi
+        print_color "$BLUE" "Converting to startup format..."
+        # Add startup theme and reformat
+        sed -i '' 's/theme: .*/theme: startup/' "$file"
+        print_color "$GREEN" "✅ Converted to startup theme"
+        print_color "$YELLOW" "Run 'marp-startup validate $file' to check completeness"
+        ;;
+    help|--help|-h|"")
+        show_help
+        ;;
+    *)
+        print_color "$RED" "Unknown command: $1"
+        show_help
+        exit 1
+        ;;
+esac

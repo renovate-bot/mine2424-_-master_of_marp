@@ -1,0 +1,48 @@
+{
+  "name": "master-of-marp",
+  "version": "1.0.0",
+  "description": "A comprehensive Marp template system with modern presentation design guidelines",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:all": "node scripts/build-all.js",
+    "watch": "node scripts/watch.js",
+    "serve": "node scripts/serve.js",
+    "dev": "concurrently \"npm run watch\" \"npm run serve\"",
+    "export:pdf": "node scripts/export-pdf.js",
+    "export:html": "node scripts/export-html.js",
+    "export:pptx": "node scripts/export-pptx.js",
+    "new": "node scripts/new-presentation.js",
+    "validate": "node scripts/validate.js",
+    "optimize:images": "node scripts/optimize-images.js",
+    "theme:build": "node scripts/build-themes.js",
+    "theme:watch": "node scripts/watch-themes.js"
+  },
+  "keywords": [
+    "marp",
+    "presentation",
+    "slides",
+    "markdown"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@marp-team/marp-cli": "^3.4.0",
+    "@marp-team/marp-core": "^3.9.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-attrs": "^4.1.6",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-prism": "^2.3.0"
+  },
+  "devDependencies": {
+    "browser-sync": "^3.0.2",
+    "chokidar": "^3.6.0",
+    "concurrently": "^8.2.2",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.12",
+    "inquirer": "^9.2.19",
+    "sharp": "^0.33.3",
+    "yaml": "^2.4.1"
+  }
+}
