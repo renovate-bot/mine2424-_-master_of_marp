@@ -27,8 +27,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       markdown-it-prism:
-        specifier: ^2.3.0
-        version: 2.3.1
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       browser-sync:
         specifier: ^3.0.2
@@ -879,9 +879,9 @@ packages:
   markdown-it-mark@4.0.0:
     resolution: {integrity: sha512-YLhzaOsU9THO/cal0lUjfMjrqSMPjjyjChYM7oyj4DnyaXEzA8gnW6cVJeyCrCVeyesrY2PlEdUYJSPFYL4Nkg==}
 
-  markdown-it-prism@2.3.1:
-    resolution: {integrity: sha512-oZl9fGKBeSd94GhqpCrA2MO2uAWxKVe0swyX/nBqly+/6d870zae9raMgxJg+OEjhyuOrxTn8p1vMP8RkawzHw==}
-    engines: {node: '>=6.0.0'}
+  markdown-it-prism@3.0.0:
+    resolution: {integrity: sha512-M0LQsbVzjbzufV95nYdtbs99Sm/8f7zLnqFblb5yQZtFTGLM+y6hxMZ8BdujY3FFqVvTbnZ52/uoicQUqZUYbg==}
+    engines: {node: '>=20.0.0'}
 
   markdown-it@13.0.2:
     resolution: {integrity: sha512-FtwnEuuK+2yVU7goGn/MJ0WBZMM9ZPgU9spqlFs7/A/pDIUNSOQZhUgOqYCficIuR2QaFnrt8LHqBWsbTAoI5w==}
@@ -2328,7 +2328,7 @@ snapshots:
 
   markdown-it-mark@4.0.0: {}
 
-  markdown-it-prism@2.3.1:
+  markdown-it-prism@3.0.0:
     dependencies:
       prismjs: 1.30.0
 

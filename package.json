@@ -33,7 +33,7 @@
     "markdown-it-attrs": "^4.1.6",
     "markdown-it-container": "^4.0.0",
     "markdown-it-mark": "^4.0.0",
-    "markdown-it-prism": "^2.3.0"
+    "markdown-it-prism": "^3.0.0"
   },
   "devDependencies": {
     "browser-sync": "^3.0.2",
