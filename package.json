@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "browser-sync": "^3.0.2",
-    "chokidar": "^3.6.0",
+    "chokidar": "^4.0.0",
     "concurrently": "^8.2.2",
     "fs-extra": "^11.2.0",
     "glob": "^10.3.12",
